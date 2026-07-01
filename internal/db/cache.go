@@ -14,6 +14,8 @@ var (
 	queryCache  = newBoundedCache(10000)
 )
 
+// NameDBMap and TypeDBMap are the global registries of configured databases,
+// populated at startup by config.ReadConfig.
 var (
 	NameDBMap = make(NameMap)
 	TypeDBMap = make(TypeMap)

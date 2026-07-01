@@ -14,6 +14,7 @@ import (
 	"github.com/zu1k/nali/pkg/wry"
 )
 
+// DownloadUrls are the mirror URLs the QQwry database is fetched from.
 var DownloadUrls = []string{
 	"https://github.com/metowolf/qqwry.dat/releases/latest/download/qqwry.dat",
 	// Other repo:
@@ -22,6 +23,7 @@ var DownloadUrls = []string{
 	// https://github.com/metowolf/qqwry.dat
 }
 
+// QQwry is a QQwry (纯真) IPv4 geolocation database reader.
 type QQwry struct {
 	wry.IPDB[uint32]
 }
@@ -63,6 +65,7 @@ func NewQQwry(filePath string) (*QQwry, error) {
 	}, nil
 }
 
+// Find looks up query and returns its location, or an error for non-IPv4 input.
 func (db QQwry) Find(query string) (result fmt.Stringer, err error) {
 	ip := net.ParseIP(query)
 	if ip == nil {
@@ -87,10 +90,12 @@ func (db QQwry) Find(query string) (result fmt.Stringer, err error) {
 	return reader.Result.DecodeGBK(), nil
 }
 
+// Name returns the database name.
 func (db QQwry) Name() string {
 	return "qqwry"
 }
 
+// CheckFile reports whether data looks like a valid QQwry database.
 func CheckFile(data []byte) bool {
 	if len(data) < 8 {
 		return false
@@ -100,7 +105,8 @@ func CheckFile(data []byte) bool {
 	start := binary.LittleEndian.Uint32(header[:4])
 	end := binary.LittleEndian.Uint32(header[4:])
 
-	if start >= end || uint32(len(data)) < end+7 {
+	// Compare in uint64 so neither the len conversion nor end+7 can overflow.
+	if start >= end || uint64(len(data)) < uint64(end)+7 {
 		return false
 	}
 

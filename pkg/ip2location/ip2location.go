@@ -10,6 +10,7 @@ import (
 	"github.com/ip2location/ip2location-go/v9"
 )
 
+// IP2Location is an IP2Location BIN database reader.
 type IP2Location struct {
 	db *ip2location.DB
 }
@@ -30,10 +31,11 @@ func NewIP2Location(filePath string) (*IP2Location, error) {
 	}
 }
 
+// Find looks up query and returns its country, region and city.
 func (db IP2Location) Find(query string) (result fmt.Stringer, err error) {
 	ip := net.ParseIP(query)
 	if ip == nil {
-		return nil, errors.New("Query should be valid IP")
+		return nil, errors.New("query should be a valid IP")
 	}
 	record, err := db.db.Get_all(ip.String())
 
@@ -49,10 +51,12 @@ func (db IP2Location) Find(query string) (result fmt.Stringer, err error) {
 	return
 }
 
+// Name returns the database name.
 func (db IP2Location) Name() string {
 	return "ip2location"
 }
 
+// Result is an IP2Location lookup result.
 type Result struct {
 	Country string `json:"country"`
 	Region  string `json:"region"`

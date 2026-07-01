@@ -8,11 +8,13 @@ import (
 	"github.com/ipipdotnet/ipdb-go"
 )
 
-type IPIPFree struct {
+// Free is an IPIP.net free (ipdb) database reader.
+type Free struct {
 	*ipdb.City
 }
 
-func NewIPIP(filePath string) (*IPIPFree, error) {
+// NewIPIP opens the IPIP ipdb database at filePath.
+func NewIPIP(filePath string) (*Free, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Printf("IPIP数据库不存在，请手动下载解压后保存到本地: %s \n", filePath)
@@ -23,10 +25,11 @@ func NewIPIP(filePath string) (*IPIPFree, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &IPIPFree{City: db}, nil
+		return &Free{City: db}, nil
 	}
 }
 
+// Result is an IPIP lookup result.
 type Result struct {
 	Country string `json:"country"`
 	Region  string `json:"region"`
@@ -40,7 +43,8 @@ func (r Result) String() string {
 	return fmt.Sprintf("%s %s %s", r.Country, r.Region, r.City)
 }
 
-func (db IPIPFree) Find(query string) (result fmt.Stringer, err error) {
+// Find looks up query and returns its country, region and city.
+func (db Free) Find(query string) (result fmt.Stringer, err error) {
 	info, err := db.FindInfo(query, "CN")
 	if err != nil || info == nil {
 		return nil, err
@@ -55,6 +59,7 @@ func (db IPIPFree) Find(query string) (result fmt.Stringer, err error) {
 	}
 }
 
-func (db IPIPFree) Name() string {
+// Name returns the database name.
+func (db Free) Name() string {
 	return "ipip"
 }

@@ -18,6 +18,8 @@ func ResolveDBPath(filename string) string {
 	return filepath.Join(DataDirPath, filename)
 }
 
+// ConfigDirPath and DataDirPath hold the resolved config and data directories,
+// populated by InitPaths at startup.
 var (
 	ConfigDirPath string
 	DataDirPath   string
@@ -51,7 +53,7 @@ func InitPaths() error {
 func prepareDir(dir string) error {
 	stat, err := os.Stat(dir)
 	if os.IsNotExist(err) {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			return fmt.Errorf("can not create dir %q: %w", dir, err)
 		}
 		return nil

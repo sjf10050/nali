@@ -11,6 +11,7 @@ const (
 // redirect in a malformed database can't recurse forever and overflow the stack.
 const maxRedirectDepth = 16
 
+// Parse reads the record at offset into the Reader's Result, following redirects.
 func (r *Reader) Parse(offset uint32) {
 	r.parse(offset, 0)
 }

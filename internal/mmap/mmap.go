@@ -15,11 +15,11 @@ var ErrEmptyFile = errors.New("mmap: file is empty")
 // The returned slice is valid for the lifetime of the mapping (typically
 // the process lifetime for a CLI tool).
 func MapFile(path string) ([]byte, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) //nolint:gosec // path is a configured local database file
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	fi, err := f.Stat()
 	if err != nil {

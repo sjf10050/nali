@@ -12,6 +12,7 @@ import (
 	"github.com/zu1k/nali/pkg/zxipv6wry"
 )
 
+// UpdateDB updates the named databases, or the default update list when no names are given.
 func UpdateDB(ctx context.Context, dbNames ...string) {
 	if len(dbNames) == 0 {
 		dbNames = DbNameListForUpdate
@@ -29,6 +30,7 @@ func UpdateDB(ctx context.Context, dbNames ...string) {
 	}
 }
 
+// DbNameListForUpdate is the default set of databases updated when no names are supplied.
 var DbNameListForUpdate = []string{
 	"qqwry",
 	"zxipv6wry",
@@ -36,6 +38,7 @@ var DbNameListForUpdate = []string{
 	"cdn",
 }
 
+// DbCheckFunc maps a database format to a function that validates downloaded content.
 var DbCheckFunc = map[Format]func([]byte) bool{
 	FormatQQWry:     qqwry.CheckFile,
 	FormatZXIPv6Wry: zxipv6wry.CheckFile,
@@ -77,7 +80,7 @@ func getUpdateFuncByName(ctx context.Context, name string) (func() error, string
 	}
 
 	// internal download func
-	switch db.Format {
+	switch db.Format { //nolint:exhaustive // default intentionally handles all non-ZXIPv6Wry formats
 	case FormatZXIPv6Wry:
 		zxFile := constant.ResolveDBPath(db.File)
 		return func() error {

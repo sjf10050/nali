@@ -10,6 +10,7 @@ import (
 	"github.com/zu1k/nali/pkg/common"
 )
 
+// Download streams the first working URL to filePath and returns the downloaded bytes.
 func Download(ctx context.Context, filePath string, urls ...string) (data []byte, err error) {
 	if len(urls) == 0 {
 		return nil, fmt.Errorf("未指定下载 url")
@@ -35,14 +36,14 @@ func Download(ctx context.Context, filePath string, urls ...string) (data []byte
 		}
 
 		if resp.StatusCode != 200 {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
 			continue
 		}
 
-		f, err := os.Create(tmpPath)
+		f, err := os.Create(tmpPath) //nolint:gosec // tmpPath is derived from the caller-configured database path
 		if err != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			lastErr = err
 			continue
 		}
@@ -50,28 +51,28 @@ func Download(ctx context.Context, filePath string, urls ...string) (data []byte
 		// Cap the download size so a broken/hostile server can't fill the disk.
 		const limit = int64(common.MaxResponseSize)
 		n, err := io.Copy(f, io.LimitReader(resp.Body, limit+1))
-		resp.Body.Close()
-		f.Close()
+		_ = resp.Body.Close()
+		_ = f.Close()
 
 		if err == nil && n > limit {
 			err = fmt.Errorf("download exceeds max size %d bytes", limit)
 		}
 		if err != nil {
-			os.Remove(tmpPath)
+			_ = os.Remove(tmpPath)
 			lastErr = err
 			continue
 		}
 
 		// Success — rename temp to target
-		os.Remove(filePath)
+		_ = os.Remove(filePath)
 		if err := os.Rename(tmpPath, filePath); err != nil {
 			lastErr = err
 			continue
 		}
 
 		// Read back for validation (existing callers expect []byte return)
-		os.Remove(tmpPath) // cleanup
-		data, err = os.ReadFile(filePath)
+		_ = os.Remove(tmpPath)            // cleanup
+		data, err = os.ReadFile(filePath) //nolint:gosec // filePath is the caller-configured database path
 		return data, err
 	}
 

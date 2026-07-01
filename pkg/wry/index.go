@@ -14,6 +14,7 @@ const maxSearchIter = 128
 // rather than the builtin. The explicit conversions bridge the builtin values
 // returned by encoding/binary and Bytes3ToUint32.
 
+// SearchIndexV4 returns the record offset for the IPv4 address ip, or 0 if not found.
 func (db *IPDB[uint32]) SearchIndexV4(ip uint32) uint32 {
 	ipLen := uint32(db.IPLen)
 	entryLen := uint32(db.OffLen) + uint32(db.IPLen)
@@ -56,6 +57,7 @@ func (db *IPDB[uint32]) SearchIndexV4(ip uint32) uint32 {
 	return 0
 }
 
+// SearchIndexV6 returns the record offset for the IPv6 address ip, or 0 if not found.
 func (db *IPDB[uint64]) SearchIndexV6(ip uint64) uint32 {
 	ipLen := uint64(db.IPLen)
 	entryLen := uint64(db.OffLen) + uint64(db.IPLen)

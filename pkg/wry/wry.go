@@ -26,6 +26,7 @@ type IPDB[T ~uint32 | ~uint64] struct {
 	IdxEnd   T
 }
 
+// Reader sequentially parses records from a wry-format database.
 type Reader struct {
 	s   []byte
 	i   uint32 // current reading index
@@ -35,6 +36,7 @@ type Reader struct {
 	Result Result
 }
 
+// NewReader returns a Reader over data positioned at the start.
 func NewReader(data []byte) Reader {
 	return Reader{s: data, i: 0, l: 0, Result: Result{
 		Country: "",
@@ -56,11 +58,6 @@ func (r *Reader) seekAbs(offset uint32) {
 	r.i = offset
 }
 
-func (r *Reader) seek(offset int64) {
-	r.l = r.i
-	r.i = uint32(int64(r.i) + offset)
-}
-
 // seekBack: seek to last index, can only call once
 func (r *Reader) seekBack() {
 	r.i = r.l
@@ -68,7 +65,7 @@ func (r *Reader) seekBack() {
 
 func (r *Reader) read(length uint32) []byte {
 	rs := make([]byte, length)
-	if r.err != nil || r.i > uint32(len(r.s)) {
+	if r.err != nil || uint64(r.i) > uint64(len(r.s)) {
 		r.fail()
 		return rs
 	}
@@ -79,7 +76,7 @@ func (r *Reader) read(length uint32) []byte {
 }
 
 func (r *Reader) readMode() (mode byte) {
-	if r.err != nil || r.i >= uint32(len(r.s)) {
+	if r.err != nil || uint64(r.i) >= uint64(len(r.s)) {
 		r.fail()
 		return 0
 	}
@@ -101,7 +98,7 @@ func (r *Reader) readOffset(follow bool) uint32 {
 }
 
 func (r *Reader) readString(seek bool) string {
-	if r.err != nil || r.i > uint32(len(r.s)) {
+	if r.err != nil || uint64(r.i) > uint64(len(r.s)) {
 		r.fail()
 		return ""
 	}
@@ -111,7 +108,7 @@ func (r *Reader) readString(seek bool) string {
 		r.fail()
 		return ""
 	}
-	length := uint32(idx)
+	length := uint32(idx) //nolint:gosec // idx is bounded by len(r.s), which the uint32-offset design keeps below 2^32
 	str := string(r.s[r.i : r.i+length])
 	if seek {
 		r.l = r.i
@@ -120,11 +117,13 @@ func (r *Reader) readString(seek bool) string {
 	return str
 }
 
+// Result is a wry lookup result: country and area.
 type Result struct {
 	Country string `json:"country"`
 	Area    string `json:"area"`
 }
 
+// DecodeGBK decodes the result's fields from GBK to UTF-8 in place and returns it.
 func (r *Result) DecodeGBK() *Result {
 	enc := simplifiedchinese.GBK.NewDecoder()
 	r.Country, _ = enc.String(r.Country)
@@ -132,6 +131,7 @@ func (r *Result) DecodeGBK() *Result {
 	return r
 }
 
+// Trim removes CZ88.NET advertising markers and surrounding whitespace in place.
 func (r *Result) Trim() *Result {
 	r.Country = strings.TrimSpace(strings.ReplaceAll(r.Country, "CZ88.NET", ""))
 	r.Area = strings.TrimSpace(strings.ReplaceAll(r.Area, "CZ88.NET", ""))
@@ -143,6 +143,7 @@ func (r Result) String() string {
 	return strings.TrimSpace(fmt.Sprintf("%s %s", r.Country, r.Area))
 }
 
+// Bytes3ToUint32 decodes a little-endian 3-byte offset into a uint32.
 func Bytes3ToUint32(data []byte) uint32 {
 	i := uint32(data[0]) & 0xff
 	i |= (uint32(data[1]) << 8) & 0xff00

@@ -21,6 +21,8 @@ var (
 	shaAsset *github.ReleaseAsset
 )
 
+// UpdateRepo checks GitHub for a newer release and, if one exists, downloads,
+// verifies (sha256) and replaces the running nali executable.
 func UpdateRepo(ctx context.Context) error {
 	rel, err := getLatestRelease(ctx)
 	if err != nil {
@@ -102,7 +104,7 @@ func update(asset io.Reader, cmdPath string) error {
 
 	// Copy the contents of new binary to a new executable file
 	newPath := filepath.Join(updateDir, fmt.Sprintf(".%s.new", filename))
-	fp, err := os.OpenFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	fp, err := os.OpenFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755) //nolint:gosec // newPath is inside the running executable's own directory; 0755 is required for the replacement binary
 
 	if err != nil {
 		_ = fp.Close()
@@ -176,11 +178,11 @@ func canUpdate(rel *github.RepositoryRelease) bool {
 
 func canWriteDir(path string) bool {
 	fp := filepath.Join(path, ".tempWriteCheck")
-	file, err := os.Create(fp)
+	file, err := os.Create(fp) //nolint:gosec // fp is a probe file in the caller-provided install directory
 	if err != nil {
 		return false
 	}
-	file.Close()
-	os.Remove(fp)
+	_ = file.Close()
+	_ = os.Remove(fp)
 	return true
 }

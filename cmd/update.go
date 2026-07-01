@@ -19,7 +19,7 @@ var updateCmd = &cobra.Command{
 	Short:   "update qqwry, zxipv6wry, ip2region ip database and cdn, update nali to latest version if -v",
 	Long:    `update qqwry, zxipv6wry, ip2region ip database and cdn. Use commas to separate. update nali to latest version if -v`,
 	Example: "nali update --db qqwry,cdn -v",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 		defer stop()
 

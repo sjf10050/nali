@@ -67,7 +67,7 @@ Find document on: https://github.com/zu1k/nali
 		// syscall per line. bufio auto-flushes as the buffer fills; the deferred
 		// Flush emits the tail.
 		out := bufio.NewWriter(color.Output)
-		defer out.Flush()
+		defer func() { _ = out.Flush() }()
 
 		// Flush after every line while stdout is a terminal, so interactive
 		// queries echo immediately and coloured escape sequences are never split

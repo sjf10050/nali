@@ -12,29 +12,13 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.26'
-
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
-      - name: Run Lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=5m
 
       - name: Run Tests with Coverage
         run: |
@@ -43,11 +27,16 @@ jobs:
 
       - name: Upload Coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage.out
           retention-days: 7
+
+      - name: Run Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
 
   build:
     name: Build
@@ -56,23 +45,13 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.26'
-
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: Build for multiple platforms
         run: |
@@ -87,7 +66,7 @@ jobs:
       contents: read
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 

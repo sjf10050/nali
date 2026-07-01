@@ -16,10 +16,10 @@ func SaveFile(path string, data []byte) (err error) {
 		return fmt.Errorf("创建临时文件失败: %w", err)
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName) // no-op after a successful rename
+	defer func() { _ = os.Remove(tmpName) }() // no-op after a successful rename
 
 	if _, err = tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return fmt.Errorf("写入临时文件失败: %w", err)
 	}
 	if err = tmp.Close(); err != nil {

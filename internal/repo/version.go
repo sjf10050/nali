@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Version is a parsed semantic version (major.minor.patch).
 type Version struct {
 	Major int
 	Minor int
@@ -39,14 +40,17 @@ func parseVersion(vStr string) (*Version, error) {
 	return &Version{Major: major, Minor: minor, Patch: patch}, nil
 }
 
+// Equal reports whether v and other are the same version.
 func (v *Version) Equal(other *Version) bool {
 	return v.compare(other) == 0
 }
 
+// GreaterThan reports whether v is a later version than other.
 func (v *Version) GreaterThan(other *Version) bool {
 	return v.compare(other) > 0
 }
 
+// LessThan reports whether v is an earlier version than other.
 func (v *Version) LessThan(other *Version) bool {
 	return v.compare(other) < 0
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/zu1k/nali/pkg/common"
 )
 
+// Download fetches and decompresses the ZX IPv6 database, saving it to filePath when one is given.
 func Download(ctx context.Context, filePath ...string) (data []byte, err error) {
 	data, err = getData(ctx)
 	if err != nil {
@@ -48,19 +49,20 @@ func getData(ctx context.Context) (data []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(file7z.Name())
-	if err := os.WriteFile(file7z.Name(), data, 0644); err == nil {
+	defer func() { _ = os.Remove(file7z.Name()) }()
+	if err := os.WriteFile(file7z.Name(), data, 0600); err == nil {
 		return Un7z(file7z.Name())
 	}
 	return
 }
 
+// Un7z extracts the ipv6wry.db entry from the 7z archive at filePath and returns its bytes.
 func Un7z(filePath string) (data []byte, err error) {
 	sz, err := go7z.OpenReader(filePath)
 	if err != nil {
 		return nil, err
 	}
-	defer sz.Close()
+	defer func() { _ = sz.Close() }()
 
 	fileNoNeed, err := os.CreateTemp("", "nali-zxipv6-*")
 	if err != nil {
@@ -94,7 +96,7 @@ func Un7z(filePath string) (data []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(fileNoNeed.Name())
-	defer os.Remove(fileNeed.Name())
+	defer func() { _ = os.Remove(fileNoNeed.Name()) }()
+	defer func() { _ = os.Remove(fileNeed.Name()) }()
 	return os.ReadFile(fileNeed.Name())
 }

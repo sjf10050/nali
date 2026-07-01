@@ -1,5 +1,8 @@
 version: "2"
 
+run:
+  timeout: 5m
+
 linters:
   enable:
     - bodyclose
@@ -14,25 +17,23 @@ linters:
     - sqlclosecheck
     - staticcheck
     - unused
-
-linters-settings:
-  revive:
+  settings:
+    revive:
+      rules:
+        - name: exported
+          disabled: false
+        - name: blank-imports
+        - name: context-as-argument
+        - name: unused-parameter
+    exhaustive:
+      default-signifies-exhaustive: false
+  exclusions:
     rules:
-      - name: exported
-        disabled: false
-      - name: blank-imports
-      - name: context-as-argument
-      - name: unused-parameter
-  exhaustive:
-    default-signifies-exhaustive: false
+      - path: _test\.go
+        linters:
+          - gosec
 
 formatters:
   enable:
     - gofmt
     - goimports
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec

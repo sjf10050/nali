@@ -8,6 +8,8 @@ import (
 	"github.com/zu1k/nali/internal/db"
 )
 
+// ReadConfig loads configuration from basePath (writing a default file if none
+// exists), binds NALI_* environment overrides, and registers the database maps.
 func ReadConfig(basePath string) error {
 	viper.SetDefault("databases", db.GetDefaultDBList())
 	viper.SetDefault("selected.ipv4", "qqwry")

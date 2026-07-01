@@ -6,6 +6,7 @@ import (
 	"github.com/zu1k/nali/pkg/qqwry"
 )
 
+// GetDefaultDBList returns the built-in list of databases used when none are configured.
 func GetDefaultDBList() List {
 	return List{
 		&DB{

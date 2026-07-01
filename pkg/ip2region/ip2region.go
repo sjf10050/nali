@@ -14,15 +14,18 @@ import (
 	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
 )
 
+// DownloadUrls are the mirror URLs the ip2region database is fetched from.
 var DownloadUrls = []string{
 	"https://cdn.jsdelivr.net/gh/lionsoul2014/ip2region/data/ip2region.xdb",
 	"https://raw.githubusercontent.com/lionsoul2014/ip2region/master/data/ip2region.xdb",
 }
 
+// Ip2Region is an ip2region xdb database reader.
 type Ip2Region struct {
 	seacher *xdb.Searcher
 }
 
+// NewIp2Region opens the ip2region xdb at filePath, downloading it if the file is absent.
 func NewIp2Region(filePath string) (*Ip2Region, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
@@ -44,6 +47,7 @@ func NewIp2Region(filePath string) (*Ip2Region, error) {
 	}, nil
 }
 
+// Find looks up query and returns its region information.
 func (db Ip2Region) Find(query string) (result fmt.Stringer, err error) {
 	if db.seacher != nil {
 		res, err := db.seacher.Search(query)
@@ -59,6 +63,7 @@ func (db Ip2Region) Find(query string) (result fmt.Stringer, err error) {
 	return nil, errors.New("ip2region 未初始化")
 }
 
+// Name returns the database name.
 func (db Ip2Region) Name() string {
 	return "ip2region"
 }

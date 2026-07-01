@@ -59,7 +59,7 @@ func download(ctx context.Context, assetId int64) (data []byte, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GitHub Releases API for getting the asset ID %v on repository '%v/%v': %v", assetId, constant.Owner, constant.Repo, err)
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	data, err = io.ReadAll(rc)
 
 	return

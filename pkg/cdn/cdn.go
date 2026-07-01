@@ -15,32 +15,37 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// DownloadUrls are the mirror URLs the CDN database is fetched from.
 var DownloadUrls = []string{
 	"https://cdn.jsdelivr.net/gh/4ft35t/cdn/src/cdn.yml",
 	"https://raw.githubusercontent.com/4ft35t/cdn/master/src/cdn.yml",
 	"https://raw.githubusercontent.com/SukkaLab/cdn/master/src/cdn.yml",
 }
 
+// CDN maps CNAME domains (both exact and regexp) to their CDN provider.
 type CDN struct {
-	Map      map[string]CDNResult
-	ReMap    []CDNReTuple
-	ReBucket map[string][]CDNReTuple
+	Map      map[string]Result
+	ReMap    []ReTuple
+	ReBucket map[string][]ReTuple
 }
 
-type CDNReTuple struct {
+// ReTuple pairs a compiled domain regexp with its CDN result.
+type ReTuple struct {
 	*regexp.Regexp
-	CDNResult
+	Result
 }
 
-type CDNResult struct {
+// Result is the provider name and link for a matched CDN domain.
+type Result struct {
 	Name string `yaml:"name" json:"name"`
 	Link string `yaml:"link" json:"link"`
 }
 
-func (r CDNResult) String() string {
+func (r Result) String() string {
 	return r.Name
 }
 
+// NewCDN loads the CDN database from filePath, downloading it if the file is absent.
 func NewCDN(filePath string) (*CDN, error) {
 	var fileData []byte
 	_, err := os.Stat(filePath)
@@ -51,11 +56,11 @@ func NewCDN(filePath string) (*CDN, error) {
 			return nil, err
 		}
 	} else {
-		cdnFile, err := os.OpenFile(filePath, os.O_RDONLY, 0400)
+		cdnFile, err := os.OpenFile(filePath, os.O_RDONLY, 0400) //nolint:gosec // filePath is a configured local database file
 		if err != nil {
 			return nil, err
 		}
-		defer cdnFile.Close()
+		defer func() { _ = cdnFile.Close() }()
 
 		fileData, err = io.ReadAll(cdnFile)
 		if err != nil {
@@ -63,14 +68,14 @@ func NewCDN(filePath string) (*CDN, error) {
 		}
 	}
 
-	cdnMap := make(map[string]CDNResult)
+	cdnMap := make(map[string]Result)
 	err = yaml.Unmarshal(fileData, &cdnMap)
 	if err != nil {
 		return nil, err
 	}
 
-	cdnReMap := make([]CDNReTuple, 0)
-	reBucket := make(map[string][]CDNReTuple)
+	cdnReMap := make([]ReTuple, 0)
+	reBucket := make(map[string][]ReTuple)
 	for k, v := range cdnMap {
 		if re.MaybeRegexp(k) {
 			rex, err := regexp.Compile(k)
@@ -78,9 +83,9 @@ func NewCDN(filePath string) (*CDN, error) {
 				log.Printf("[CDN Database] entry %s not a valid regexp", k)
 				continue
 			}
-			tuple := CDNReTuple{
-				Regexp:    rex,
-				CDNResult: v,
+			tuple := ReTuple{
+				Regexp: rex,
+				Result: v,
 			}
 			cdnReMap = append(cdnReMap, tuple)
 			tld := extractTLD(k)
@@ -91,6 +96,7 @@ func NewCDN(filePath string) (*CDN, error) {
 	return &CDN{Map: cdnMap, ReMap: cdnReMap, ReBucket: reBucket}, nil
 }
 
+// Find returns the CDN provider for query, matching exact domains first and then regexps.
 func (db CDN) Find(query string) (result fmt.Stringer, err error) {
 	baseCname := parseBaseCname(query)
 	for _, domain := range baseCname {
@@ -105,8 +111,8 @@ func (db CDN) Find(query string) (result fmt.Stringer, err error) {
 		bucket, hasBucket := db.ReBucket[tld]
 		if hasBucket {
 			for _, entry := range bucket {
-				if entry.Regexp.MatchString(domain) {
-					return entry.CDNResult, nil
+				if entry.MatchString(domain) {
+					return entry.Result, nil
 				}
 			}
 		}
@@ -115,6 +121,7 @@ func (db CDN) Find(query string) (result fmt.Stringer, err error) {
 	return nil, errors.New("not found")
 }
 
+// Name returns the database name.
 func (db CDN) Name() string {
 	return "cdn"
 }

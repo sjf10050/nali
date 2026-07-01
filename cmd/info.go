@@ -15,7 +15,7 @@ var infoCmd = &cobra.Command{
 	Short:   "get the necessary information of nali",
 	Long:    `get the necessary information of nali`,
 	Example: "nali info",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println("Nali Version:     ", constant.Version)
 		fmt.Println("Config Dir Path:  ", constant.ConfigDirPath)
 		fmt.Println("DB Data Dir Path: ", constant.DataDirPath)

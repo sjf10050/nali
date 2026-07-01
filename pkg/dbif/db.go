@@ -12,14 +12,17 @@ import (
 	"github.com/zu1k/nali/pkg/zxipv6wry"
 )
 
+// QueryType identifies the kind of query: IPv4, IPv6 or domain.
 type QueryType uint
 
+// Supported query types.
 const (
 	TypeIPv4 = iota
 	TypeIPv6
 	TypeDomain
 )
 
+// DB is a queryable geolocation or CDN database.
 type DB interface {
 	Find(query string) (result fmt.Stringer, err error)
 	Name() string
@@ -28,7 +31,7 @@ type DB interface {
 var (
 	_ DB = &qqwry.QQwry{}
 	_ DB = &zxipv6wry.ZXwry{}
-	_ DB = &ipip.IPIPFree{}
+	_ DB = &ipip.Free{}
 	_ DB = &geoip.GeoIP{}
 	_ DB = &ip2region.Ip2Region{}
 	_ DB = &ip2location.IP2Location{}

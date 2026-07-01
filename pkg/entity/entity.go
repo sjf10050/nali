@@ -9,8 +9,10 @@ import (
 	"github.com/zu1k/nali/pkg/dbif"
 )
 
-type EntityType uint
+// Type classifies a parsed token (IPv4, IPv6, domain or plain text).
+type Type uint
 
+// Entity types, mirroring the dbif query types plus plain text.
 const (
 	TypeIPv4   = dbif.TypeIPv4
 	TypeIPv6   = dbif.TypeIPv6
@@ -19,9 +21,10 @@ const (
 	TypePlain = 100
 )
 
+// Entity is a parsed token from the input together with its lookup result.
 type Entity struct {
-	Loc  [2]int     `json:"-"` // s[Loc[0]:Loc[1]]
-	Type EntityType `json:"type"`
+	Loc  [2]int `json:"-"` // s[Loc[0]:Loc[1]]
+	Type Type   `json:"type"`
 
 	Text     string      `json:"ip"`
 	InfoText string      `json:"text"`
@@ -29,6 +32,7 @@ type Entity struct {
 	Info     interface{} `json:"info"`
 }
 
+// Json renders the entity as a JSON string.
 func (e Entity) Json() string {
 	jsonResult, err := json.Marshal(e)
 	if err != nil {
@@ -37,6 +41,7 @@ func (e Entity) Json() string {
 	return string(jsonResult)
 }
 
+// Entities is an ordered collection of parsed entities.
 type Entities []*Entity
 
 func (es Entities) Len() int {
@@ -62,6 +67,7 @@ func (es Entities) String() string {
 	return result.String()
 }
 
+// ColorString renders the entities as a colorized line for terminal output.
 func (es Entities) ColorString() string {
 	var line strings.Builder
 	for _, e := range es {
@@ -82,6 +88,7 @@ func (es Entities) ColorString() string {
 	return line.String()
 }
 
+// Json renders the non-plain entities as newline-separated JSON objects.
 func (es Entities) Json() string {
 	var s strings.Builder
 	for _, e := range es {

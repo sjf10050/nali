@@ -96,7 +96,7 @@ func FuzzParse(f *testing.F) {
 	f.Add([]byte{0x01, 0x00, 0x00, 0x00}, uint32(0))
 	f.Add([]byte{0x02, 0x05, 0x00, 0x00, 0x41, 0x00}, uint32(0))
 	f.Add([]byte("hello\x00world\x00"), uint32(3))
-	f.Fuzz(func(t *testing.T, data []byte, offset uint32) {
+	f.Fuzz(func(_ *testing.T, data []byte, offset uint32) {
 		r := NewReader(data)
 		r.Parse(offset) // must never panic
 		_ = r.Result.String()
@@ -106,7 +106,7 @@ func FuzzParse(f *testing.F) {
 
 func FuzzSearchIndexV4(f *testing.F) {
 	f.Add(make([]byte, 32), uint32(0x01020304))
-	f.Fuzz(func(t *testing.T, data []byte, ip uint32) {
+	f.Fuzz(func(_ *testing.T, data []byte, ip uint32) {
 		if len(data) < 8 {
 			return
 		}
@@ -123,7 +123,7 @@ func FuzzSearchIndexV4(f *testing.F) {
 
 func FuzzSearchIndexV6(f *testing.F) {
 	f.Add(make([]byte, 64), uint64(0x0102030405060708))
-	f.Fuzz(func(t *testing.T, data []byte, ip uint64) {
+	f.Fuzz(func(_ *testing.T, data []byte, ip uint64) {
 		if len(data) < 16 {
 			return
 		}

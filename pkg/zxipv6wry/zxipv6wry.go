@@ -13,10 +13,12 @@ import (
 	"github.com/zu1k/nali/pkg/wry"
 )
 
+// ZXwry is a ZX IPv6 (zxinc) geolocation database reader.
 type ZXwry struct {
 	wry.IPDB[uint64]
 }
 
+// NewZXwry opens the ZX IPv6 database at filePath, downloading it if the file is absent.
 func NewZXwry(filePath string) (*ZXwry, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
@@ -57,6 +59,7 @@ func NewZXwry(filePath string) (*ZXwry, error) {
 	}, nil
 }
 
+// Find looks up query and returns its location, or an error for non-IPv6 input.
 func (db *ZXwry) Find(query string) (result fmt.Stringer, err error) {
 	ip := net.ParseIP(query)
 	if ip == nil {
@@ -78,10 +81,12 @@ func (db *ZXwry) Find(query string) (result fmt.Stringer, err error) {
 	return reader.Result, nil
 }
 
+// Name returns the database name.
 func (db *ZXwry) Name() string {
 	return "zxipv6wry"
 }
 
+// CheckFile reports whether data looks like a valid ZX IPv6 database.
 func CheckFile(data []byte) bool {
 	if len(data) < 4 {
 		return false

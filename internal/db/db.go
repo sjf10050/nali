@@ -19,6 +19,8 @@ func init() {
 	_, nat64CIDR, _ = net.ParseCIDR("64:ff9b::/96")
 }
 
+// GetDB returns the database configured for the given query type, initialising
+// and caching it on first use.
 func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 	cacheMu.RLock()
 	cached, found := dbTypeCache[typ]
@@ -109,6 +111,8 @@ func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 	return db, nil
 }
 
+// Find looks up query in the database for typ and returns the result, or nil if
+// the lookup fails. Results are cached and NAT64 addresses are resolved to IPv4.
 func Find(typ dbif.QueryType, query string) *Result {
 	// Cache identity is the original (typ, query). The type is part of the key so
 	// the same text queried as different types can't collide, and the NAT64
