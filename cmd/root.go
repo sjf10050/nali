@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -62,6 +63,18 @@ Find document on: https://github.com/zu1k/nali
 		gbk, _ := cmd.Flags().GetBool("gbk")
 		isJson, _ := cmd.Flags().GetBool("json")
 
+		// Buffer output: `cat access.log | nali > out` otherwise costs one write
+		// syscall per line. bufio auto-flushes as the buffer fills; the deferred
+		// Flush emits the tail.
+		out := bufio.NewWriter(color.Output)
+		defer out.Flush()
+
+		// Flush after every line while stdout is a terminal, so interactive
+		// queries echo immediately and coloured escape sequences are never split
+		// across a buffer boundary. When stdout is redirected, colours are already
+		// disabled and batching is safe — that's the throughput-sensitive path.
+		flushEachLine := isatty.IsTerminal(os.Stdout.Fd())
+
 		if len(args) == 0 {
 			stdin := bufio.NewScanner(os.Stdin)
 			stdin.Split(common.ScanLines)
@@ -74,17 +87,20 @@ Find document on: https://github.com/zu1k/nali
 					return
 				}
 				if isJson {
-					_, _ = fmt.Fprintf(color.Output, "%s", entity.ParseLine(line).Json())
+					_, _ = fmt.Fprintf(out, "%s", entity.ParseLine(line).Json())
 				} else {
-					_, _ = fmt.Fprintf(color.Output, "%s", entity.ParseLine(line).ColorString())
+					_, _ = fmt.Fprintf(out, "%s", entity.ParseLine(line).ColorString())
+				}
+				if flushEachLine {
+					_ = out.Flush()
 				}
 			}
 		} else {
 			if isJson {
-				_, _ = fmt.Fprintf(color.Output, "%s", entity.ParseLine(strings.Join(args, " ")).Json())
+				_, _ = fmt.Fprintf(out, "%s", entity.ParseLine(strings.Join(args, " ")).Json())
 			} else {
 				for _, line := range args {
-					_, _ = fmt.Fprintf(color.Output, "%s\n", entity.ParseLine(line).ColorString())
+					_, _ = fmt.Fprintf(out, "%s\n", entity.ParseLine(line).ColorString())
 				}
 			}
 		}

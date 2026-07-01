@@ -5,11 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
 
+	"github.com/zu1k/nali/internal/mmap"
 	"github.com/zu1k/nali/pkg/wry"
 )
 
@@ -18,26 +18,18 @@ type ZXwry struct {
 }
 
 func NewZXwry(filePath string) (*ZXwry, error) {
-	var fileData []byte
-
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Println("文件不存在，尝试从网络获取最新ZX IPv6数据库")
-		fileData, err = Download(context.Background(), filePath)
+		_, err = Download(context.Background(), filePath)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		fileBase, err := os.OpenFile(filePath, os.O_RDONLY, 0400)
-		if err != nil {
-			return nil, err
-		}
-		defer fileBase.Close()
+	}
 
-		fileData, err = io.ReadAll(fileBase)
-		if err != nil {
-			return nil, err
-		}
+	fileData, err := mmap.MapFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("mmap zxipv6wry database: %w", err)
 	}
 
 	if !CheckFile(fileData) {

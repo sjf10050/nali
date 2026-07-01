@@ -5,8 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/spf13/viper"
-
+	"github.com/zu1k/nali/internal/constant"
 	"github.com/zu1k/nali/pkg/cdn"
 	"github.com/zu1k/nali/pkg/dbif"
 	"github.com/zu1k/nali/pkg/geoip"
@@ -28,14 +27,9 @@ func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 		return cached, nil
 	}
 
-	lang := viper.GetString("selected.lang")
-	if lang == "" {
-		lang = "zh-CN"
-	}
-
 	switch typ {
 	case dbif.TypeIPv4:
-		selected := viper.GetString("selected.ipv4")
+		selected := selectedIPv4
 		if selected != "" {
 			dbInfo, dbErr := getDbByName(selected)
 			if dbErr != nil {
@@ -45,21 +39,21 @@ func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 			break
 		}
 
-		if lang == "zh-CN" {
+		if selectedLang == "zh-CN" {
 			qqwryDB, dbErr := getDbByName("qqwry")
 			if dbErr != nil {
 				return nil, dbErr
 			}
-			db, err = qqwry.NewQQwry(qqwryDB.File)
+			db, err = qqwry.NewQQwry(constant.ResolveDBPath(qqwryDB.File))
 		} else {
 			geoipDB, dbErr := getDbByName("geoip")
 			if dbErr != nil {
 				return nil, dbErr
 			}
-			db, err = geoip.NewGeoIP(geoipDB.File)
+			db, err = geoip.NewGeoIP(constant.ResolveDBPath(geoipDB.File), selectedLang)
 		}
 	case dbif.TypeIPv6:
-		selected := viper.GetString("selected.ipv6")
+		selected := selectedIPv6
 		if selected != "" {
 			dbInfo, dbErr := getDbByName(selected)
 			if dbErr != nil {
@@ -69,21 +63,21 @@ func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 			break
 		}
 
-		if lang == "zh-CN" {
+		if selectedLang == "zh-CN" {
 			zxDB, dbErr := getDbByName("zxipv6wry")
 			if dbErr != nil {
 				return nil, dbErr
 			}
-			db, err = zxipv6wry.NewZXwry(zxDB.File)
+			db, err = zxipv6wry.NewZXwry(constant.ResolveDBPath(zxDB.File))
 		} else {
 			geoipDB, dbErr := getDbByName("geoip")
 			if dbErr != nil {
 				return nil, dbErr
 			}
-			db, err = geoip.NewGeoIP(geoipDB.File)
+			db, err = geoip.NewGeoIP(constant.ResolveDBPath(geoipDB.File), selectedLang)
 		}
 	case dbif.TypeDomain:
-		selected := viper.GetString("selected.cdn")
+		selected := selectedCDN
 		if selected != "" {
 			dbInfo, dbErr := getDbByName(selected)
 			if dbErr != nil {
@@ -97,7 +91,7 @@ func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 		if dbErr != nil {
 			return nil, dbErr
 		}
-		db, err = cdn.NewCDN(cdnDB.File)
+		db, err = cdn.NewCDN(constant.ResolveDBPath(cdnDB.File))
 	default:
 		return nil, fmt.Errorf("query type not supported: %v", typ)
 	}
@@ -116,32 +110,37 @@ func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 }
 
 func Find(typ dbif.QueryType, query string) *Result {
-	if cached, found := queryCache.Load(query); found {
-		result, ok := cached.(*Result)
-		if ok {
-			return result
-		}
+	// Cache identity is the original (typ, query). The type is part of the key so
+	// the same text queried as different types can't collide, and the NAT64
+	// rewrite below changes only the lookup target — not the key — so NAT64
+	// inputs still cache under their own text.
+	cacheKey := fmt.Sprintf("%d\x00%s", typ, query)
+	if result, found := queryCache.Load(cacheKey); found {
+		return result
 	}
-	// Convert NAT64 64:ff9b::/96 to IPv4
+
+	// Convert NAT64 64:ff9b::/96 to IPv4 for the lookup only.
+	lookupTyp, lookupQuery := typ, query
 	if typ == dbif.TypeIPv6 {
 		ip := net.ParseIP(query)
 		if ip != nil && nat64CIDR != nil && nat64CIDR.Contains(ip) {
 			ip4 := make(net.IP, 4)
 			copy(ip4, ip[12:16])
-			query = ip4.String()
-			typ = dbif.TypeIPv4
+			lookupQuery = ip4.String()
+			lookupTyp = dbif.TypeIPv4
 		}
 	}
-	db, err := GetDB(typ)
+
+	db, err := GetDB(lookupTyp)
 	if err != nil {
 		log.Println("GetDB error:", err)
 		return nil
 	}
-	result, err := db.Find(query)
+	result, err := db.Find(lookupQuery)
 	if err != nil {
 		return nil
 	}
 	res := &Result{db.Name(), result}
-	queryCache.Store(query, res)
+	queryCache.Store(cacheKey, res)
 	return res
 }

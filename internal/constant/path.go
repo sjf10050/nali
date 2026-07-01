@@ -8,6 +8,16 @@ import (
 	"github.com/adrg/xdg"
 )
 
+// ResolveDBPath returns an absolute path for a database file. If filename is
+// already absolute it is returned unchanged; otherwise it is joined with
+// DataDirPath (which must already be initialised via InitPaths).
+func ResolveDBPath(filename string) string {
+	if filepath.IsAbs(filename) {
+		return filename
+	}
+	return filepath.Join(DataDirPath, filename)
+}
+
 var (
 	ConfigDirPath string
 	DataDirPath   string
@@ -15,8 +25,7 @@ var (
 
 // InitPaths resolves the config/data directories from the environment (or XDG
 // defaults) and ensures they exist. It must be called once at startup before
-// any code reads ConfigDirPath/DataDirPath. Returning an error (instead of the
-// previous init()+log.Fatal) keeps the package importable and testable.
+// any code reads ConfigDirPath/DataDirPath.
 func InitPaths() error {
 	if naliHome := os.Getenv("NALI_HOME"); len(naliHome) != 0 {
 		ConfigDirPath = naliHome

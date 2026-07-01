@@ -5,11 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
 
+	"github.com/zu1k/nali/internal/mmap"
 	"github.com/zu1k/nali/pkg/download"
 	"github.com/zu1k/nali/pkg/wry"
 )
@@ -28,26 +28,18 @@ type QQwry struct {
 
 // NewQQwry new database from path
 func NewQQwry(filePath string) (*QQwry, error) {
-	var fileData []byte
-
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Println("文件不存在，尝试从网络获取最新纯真 IP 库")
-		fileData, err = download.Download(context.Background(), filePath, DownloadUrls...)
+		_, err = download.Download(context.Background(), filePath, DownloadUrls...)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		fileBase, err := os.OpenFile(filePath, os.O_RDONLY, 0400)
-		if err != nil {
-			return nil, err
-		}
-		defer fileBase.Close()
+	}
 
-		fileData, err = io.ReadAll(fileBase)
-		if err != nil {
-			return nil, err
-		}
+	fileData, err := mmap.MapFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("mmap qqwry database: %w", err)
 	}
 
 	if !CheckFile(fileData) {

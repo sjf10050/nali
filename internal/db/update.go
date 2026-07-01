@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/zu1k/nali/internal/constant"
 	"github.com/zu1k/nali/pkg/download"
 	"github.com/zu1k/nali/pkg/qqwry"
 	"github.com/zu1k/nali/pkg/zxipv6wry"
@@ -53,22 +54,23 @@ func getUpdateFuncByName(ctx context.Context, name string) (func() error, string
 	// direct download if download-url not null
 	if len(db.DownloadUrls) > 0 {
 		return func() error {
+			filePath := constant.ResolveDBPath(db.File)
 			log.Printf("正在下载最新 %s 数据库...\n", db.Name)
-			data, err := download.Download(ctx, db.File, db.DownloadUrls...)
+			data, err := download.Download(ctx, filePath, db.DownloadUrls...)
 			if err != nil {
-				log.Printf("%s 数据库下载失败，请手动下载解压后保存到本地: %s \n", db.Name, db.File)
+				log.Printf("%s 数据库下载失败，请手动下载解压后保存到本地: %s \n", db.Name, filePath)
 				log.Println("下载链接：", db.DownloadUrls)
 				log.Println("error:", err)
 				return err
 			} else {
 				if check, ok := DbCheckFunc[db.Format]; ok {
 					if !check(data) {
-						log.Printf("%s 数据库下载失败，请手动下载解压后保存到本地: %s \n", db.Name, db.File)
+						log.Printf("%s 数据库下载失败，请手动下载解压后保存到本地: %s \n", db.Name, filePath)
 						log.Println("下载链接：", db.DownloadUrls)
 						return errors.New("数据库内容出错")
 					}
 				}
-				log.Printf("%s 数据库下载成功: %s\n", db.Name, db.File)
+				log.Printf("%s 数据库下载成功: %s\n", db.Name, filePath)
 				return nil
 			}
 		}, string(db.Format)
@@ -77,7 +79,7 @@ func getUpdateFuncByName(ctx context.Context, name string) (func() error, string
 	// internal download func
 	switch db.Format {
 	case FormatZXIPv6Wry:
-		zxFile := db.File
+		zxFile := constant.ResolveDBPath(db.File)
 		return func() error {
 			log.Println("正在下载最新 ZX IPv6数据库...")
 			_, err := zxipv6wry.Download(ctx, zxFile)

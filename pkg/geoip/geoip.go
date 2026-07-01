@@ -8,17 +8,16 @@ import (
 	"os"
 
 	"github.com/oschwald/geoip2-golang"
-	"github.com/spf13/viper"
 )
 
 // GeoIP2
 type GeoIP struct {
-	db *geoip2.Reader
+	db   *geoip2.Reader
+	lang string
 }
 
 // new geoip from database file
-func NewGeoIP(filePath string) (*GeoIP, error) {
-	// 判断文件是否存在
+func NewGeoIP(filePath string, lang string) (*GeoIP, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Println("文件不存在，请自行下载 Geoip2 City库，并保存在", filePath)
@@ -28,7 +27,7 @@ func NewGeoIP(filePath string) (*GeoIP, error) {
 		if err != nil {
 			return nil, err
 		}
-		return &GeoIP{db: db}, nil
+		return &GeoIP{db: db, lang: lang}, nil
 	}
 }
 
@@ -42,15 +41,10 @@ func (g GeoIP) Find(query string) (result fmt.Stringer, err error) {
 		return
 	}
 
-	lang := viper.GetString("selected.lang")
-	if lang == "" {
-		lang = "zh-CN"
-	}
-
 	result = Result{
-		Country:     getMapLang(record.Country.Names, lang),
+		Country:     getMapLang(record.Country.Names, g.lang),
 		CountryCode: record.Country.IsoCode,
-		Area:        getMapLang(record.City.Names, lang),
+		Area:        getMapLang(record.City.Names, g.lang),
 	}
 	return
 }

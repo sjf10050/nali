@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 
+	"github.com/zu1k/nali/internal/constant"
 	"github.com/zu1k/nali/pkg/cdn"
 	"github.com/zu1k/nali/pkg/common"
 	"github.com/zu1k/nali/pkg/dbif"
@@ -34,7 +35,7 @@ func (d *DB) get() (db dbif.DB, err error) {
 		return cached, nil
 	}
 
-	filePath := d.File
+	filePath := constant.ResolveDBPath(d.File)
 
 	switch d.Format {
 	case FormatQQWry:
@@ -44,7 +45,7 @@ func (d *DB) get() (db dbif.DB, err error) {
 	case FormatIPIP:
 		db, err = ipip.NewIPIP(filePath)
 	case FormatMMDB:
-		db, err = geoip.NewGeoIP(filePath)
+		db, err = geoip.NewGeoIP(filePath, selectedLang)
 	case FormatIP2Region:
 		db, err = ip2region.NewIp2Region(filePath)
 	case FormatIP2Location:
