@@ -2,7 +2,7 @@ package entity
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"strings"
 
 	"github.com/fatih/color"
@@ -36,7 +36,7 @@ func (e Entity) ParseInfo() error {
 func (e Entity) Json() string {
 	jsonResult, err := json.Marshal(e)
 	if err != nil {
-		log.Fatal(err.Error())
+		return fmt.Sprintf(`{"error": "json marshal failed: %s"}`, err.Error())
 	}
 	return string(jsonResult)
 }

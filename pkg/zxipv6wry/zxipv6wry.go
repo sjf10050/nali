@@ -40,7 +40,7 @@ func NewZXwry(filePath string) (*ZXwry, error) {
 	}
 
 	if !CheckFile(fileData) {
-		log.Fatalln("ZX IPv6数据库存在错误，请重新下载")
+		return nil, errors.New("ZX IPv6数据库存在错误，请重新下载")
 	}
 
 	header := fileData[:24]

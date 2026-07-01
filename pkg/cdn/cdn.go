@@ -21,8 +21,9 @@ var DownloadUrls = []string{
 }
 
 type CDN struct {
-	Map   map[string]CDNResult
-	ReMap []CDNReTuple
+	Map      map[string]CDNResult
+	ReMap    []CDNReTuple
+	ReBucket map[string][]CDNReTuple
 }
 
 type CDNReTuple struct {
@@ -66,21 +67,27 @@ func NewCDN(filePath string) (*CDN, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	cdnReMap := make([]CDNReTuple, 0)
+	reBucket := make(map[string][]CDNReTuple)
 	for k, v := range cdnMap {
 		if re.MaybeRegexp(k) {
 			rex, err := regexp.Compile(k)
 			if err != nil {
 				log.Printf("[CDN Database] entry %s not a valid regexp", k)
+				continue
 			}
-			cdnReMap = append(cdnReMap, CDNReTuple{
+			tuple := CDNReTuple{
 				Regexp:    rex,
 				CDNResult: v,
-			})
+			}
+			cdnReMap = append(cdnReMap, tuple)
+			tld := extractTLD(k)
+			reBucket[tld] = append(reBucket[tld], tuple)
 		}
 	}
 
-	return &CDN{Map: cdnMap, ReMap: cdnReMap}, nil
+	return &CDN{Map: cdnMap, ReMap: cdnReMap, ReBucket: reBucket}, nil
 }
 
 func (db CDN) Find(query string, params ...string) (result fmt.Stringer, err error) {
@@ -93,9 +100,13 @@ func (db CDN) Find(query string, params ...string) (result fmt.Stringer, err err
 			}
 		}
 
-		for _, entry := range db.ReMap {
-			if entry.Regexp.MatchString(domain) {
-				return entry.CDNResult, nil
+		tld := extractTLD(domain)
+		bucket, hasBucket := db.ReBucket[tld]
+		if hasBucket {
+			for _, entry := range bucket {
+				if entry.Regexp.MatchString(domain) {
+					return entry.CDNResult, nil
+				}
 			}
 		}
 	}
@@ -120,4 +131,16 @@ func parseBaseCname(domain string) (result []string) {
 		result = append(result, domain)
 	}
 	return result
+}
+
+func extractTLD(s string) string {
+	s = strings.ReplaceAll(s, `\.`, ".")
+	parts := strings.Split(s, ".")
+	for i := len(parts) - 1; i >= 0; i-- {
+		part := strings.Trim(parts[i], `$^()[]{}?*+|`)
+		if part != "" {
+			return part
+		}
+	}
+	return ""
 }

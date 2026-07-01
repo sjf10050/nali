@@ -31,8 +31,6 @@ func init() {
 
 	prepareDir(ConfigDirPath)
 	prepareDir(DataDirPath)
-
-	_ = os.Chdir(DataDirPath)
 }
 
 func prepareDir(dir string) {

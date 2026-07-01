@@ -2,6 +2,7 @@ package zxipv6wry
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -42,7 +43,7 @@ func getData() (data []byte, err error) {
 		return nil, err
 	}
 
-	file7z, err := os.CreateTemp("", "*")
+	file7z, err := os.CreateTemp("", "nali-zxipv6-*")
 	if err != nil {
 		return nil, err
 	}
@@ -60,22 +61,19 @@ func Un7z(filePath string) (data []byte, err error) {
 	}
 	defer sz.Close()
 
-	fileNoNeed, err := os.CreateTemp("", "*")
+	fileNoNeed, err := os.CreateTemp("", "nali-zxipv6-*")
 	if err != nil {
 		return nil, err
 	}
-	fileNeed, err := os.CreateTemp("", "*")
+	fileNeed, err := os.CreateTemp("", "nali-zxipv6-*")
 	if err != nil {
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	for {
 		hdr, err := sz.Next()
 		if err == io.EOF {
-			break // IdxEnd of archive
+			break // end of archive
 		}
 		if err != nil {
 			return nil, err
@@ -83,11 +81,11 @@ func Un7z(filePath string) (data []byte, err error) {
 
 		if hdr.Name == "ipv6wry.db" {
 			if _, err := io.Copy(fileNeed, sz); err != nil {
-				log.Fatalln("ZX ipv6数据库解压出错：", err.Error())
+				return nil, fmt.Errorf("ZX ipv6数据库解压出错：%w", err)
 			}
 		} else {
 			if _, err := io.Copy(fileNoNeed, sz); err != nil {
-				log.Fatalln("ZX ipv6数据库解压出错：", err.Error())
+				return nil, fmt.Errorf("ZX ipv6数据库解压出错：%w", err)
 			}
 		}
 	}

@@ -22,3 +22,6 @@ vendor
 # macOS file
 .DS_Store
 nali
+
+# agent
+claude.md

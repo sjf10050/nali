@@ -172,12 +172,11 @@ func canUpdate(rel *github.RepositoryRelease) bool {
 
 func canWriteDir(path string) bool {
 	fp := filepath.Join(path, ".tempWriteCheck")
-	defer os.Remove(fp)
-
 	file, err := os.Create(fp)
-	if err == nil {
-		file.Close()
+	if err != nil {
+		return false
 	}
-
-	return err == nil
+	file.Close()
+	os.Remove(fp)
+	return true
 }

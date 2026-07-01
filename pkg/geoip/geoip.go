@@ -26,7 +26,7 @@ func NewGeoIP(filePath string) (*GeoIP, error) {
 	} else {
 		db, err := geoip2.Open(filePath)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		return &GeoIP{db: db}, nil
 	}

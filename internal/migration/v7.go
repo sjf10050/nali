@@ -23,7 +23,8 @@ func migration2v7() {
 	dbList := db.List{}
 	err = viper.UnmarshalKey("databases", &dbList)
 	if err != nil {
-		log.Fatalln("Config invalid:", err)
+		log.Println("Config invalid:", err)
+		return
 	}
 
 	needOverwrite := false

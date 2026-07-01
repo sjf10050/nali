@@ -1,7 +1,7 @@
 package common
 
 import (
-	"log"
+	"fmt"
 	"os"
 )
 
@@ -11,7 +11,7 @@ func SaveFile(path string, data []byte) (err error) {
 	if err == nil {
 		err = os.Remove(path)
 		if err != nil {
-			log.Fatalln("旧文件删除失败", err.Error())
+			return fmt.Errorf("旧文件删除失败: %w", err)
 		}
 	}
 

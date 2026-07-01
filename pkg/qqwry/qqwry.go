@@ -50,7 +50,7 @@ func NewQQwry(filePath string) (*QQwry, error) {
 	}
 
 	if !CheckFile(fileData) {
-		log.Fatalln("纯真 IP 库存在错误，请重新下载")
+		return nil, errors.New("纯真 IP 库存在错误，请重新下载")
 	}
 
 	header := fileData[0:8]

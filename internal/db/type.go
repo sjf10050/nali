@@ -1,7 +1,7 @@
 package db
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/zu1k/nali/pkg/cdn"
 	"github.com/zu1k/nali/pkg/common"
@@ -26,14 +26,13 @@ type DB struct {
 	DownloadUrls []string `yaml:"download-urls,omitempty" mapstructure:"download-urls"`
 }
 
-func (d *DB) get() (db dbif.DB) {
+func (d *DB) get() (db dbif.DB, err error) {
 	if db, found := dbNameCache[d.Name]; found {
-		return db
+		return db, nil
 	}
 
 	filePath := d.File
 
-	var err error
 	switch d.Format {
 	case FormatQQWry:
 		db, err = qqwry.NewQQwry(filePath)
@@ -50,11 +49,11 @@ func (d *DB) get() (db dbif.DB) {
 	case FormatCDNYml:
 		db, err = cdn.NewCDN(filePath)
 	default:
-		panic("DB format not supported!")
+		return nil, fmt.Errorf("DB format not supported: %s", d.Format)
 	}
 
 	if err != nil {
-		log.Fatalln("Database init failed:", err)
+		return nil, fmt.Errorf("database init failed: %w", err)
 	}
 
 	dbNameCache[d.Name] = db
@@ -64,12 +63,12 @@ func (d *DB) get() (db dbif.DB) {
 type Format string
 
 const (
-	FormatMMDB        Format = "mmdb"
-	FormatQQWry              = "qqwry"
-	FormatZXIPv6Wry          = "zxipv6wry"
-	FormatIPIP               = "ipip"
-	FormatIP2Region          = "ip2region"
-	FormatIP2Location        = "ip2location"
+	FormatMMDB       Format = "mmdb"
+	FormatQQWry             = "qqwry"
+	FormatZXIPv6Wry         = "zxipv6wry"
+	FormatIPIP              = "ipip"
+	FormatIP2Region         = "ip2region"
+	FormatIP2Location       = "ip2location"
 
 	FormatCDNYml = "cdn-yml"
 )
@@ -126,19 +125,18 @@ func (m *TypeMap) From(dbs List) {
 	}
 }
 
-func getDbByName(name string) (db *DB) {
+func getDbByName(name string) (*DB, error) {
 	if dbInfo, found := NameDBMap[name]; found {
-		return dbInfo
+		return dbInfo, nil
 	}
 
 	defaultNameDBMap := NameMap{}
 	defaultNameDBMap.From(GetDefaultDBList())
 	if dbInfo, found := defaultNameDBMap[name]; found {
-		return dbInfo
+		return dbInfo, nil
 	}
 
-	log.Fatalf("DB with name %s not found!\n", name)
-	return
+	return nil, fmt.Errorf("DB with name %s not found", name)
 }
 
 type Result struct {

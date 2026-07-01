@@ -24,7 +24,7 @@ func NewIP2Location(filePath string) (*IP2Location, error) {
 		db, err := ip2location.OpenDB(filePath)
 
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		return &IP2Location{db: db}, nil
 	}

@@ -9,6 +9,8 @@ import (
 
 const UserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
 
+const MaxResponseSize = 500 * 1024 * 1024
+
 type HttpClient struct {
 	*http.Client
 }
@@ -16,42 +18,53 @@ type HttpClient struct {
 var httpClient *HttpClient
 
 func init() {
-	httpClient = &HttpClient{http.DefaultClient}
-	httpClient.Timeout = time.Second * 300
-	httpClient.Transport = &http.Transport{
-		TLSHandshakeTimeout:   time.Second * 5,
-		IdleConnTimeout:       time.Second * 10,
-		ResponseHeaderTimeout: time.Second * 10,
-		ExpectContinueTimeout: time.Second * 20,
-		Proxy:                 http.ProxyFromEnvironment,
+	httpClient = &HttpClient{
+		&http.Client{
+			Timeout: time.Second * 300,
+			Transport: &http.Transport{
+				TLSHandshakeTimeout:   time.Second * 5,
+				IdleConnTimeout:       time.Second * 10,
+				ResponseHeaderTimeout: time.Second * 10,
+				ExpectContinueTimeout: time.Second * 20,
+				Proxy:                 http.ProxyFromEnvironment,
+			},
+		},
 	}
 }
 
 func GetHttpClient() *HttpClient {
-	c := *httpClient
-	return &c
+	return httpClient
 }
 
 func (c *HttpClient) Get(urls ...string) (body []byte, err error) {
-	var req *http.Request
-	var resp *http.Response
-
 	for _, url := range urls {
-		req, err = http.NewRequest(http.MethodGet, url, nil)
-		if err != nil {
-			log.Println(err)
+		req, reqErr := http.NewRequest(http.MethodGet, url, nil)
+		if reqErr != nil {
+			log.Println(reqErr)
+			err = reqErr
 			continue
 		}
 		req.Header.Set("User-Agent", UserAgent)
-		resp, err = c.Do(req)
 
-		if err == nil && resp != nil && resp.StatusCode == 200 {
-			body, err = io.ReadAll(resp.Body)
-			_ = resp.Body.Close()
-			if err != nil {
-				continue
+		resp, doErr := c.Do(req)
+		if doErr != nil {
+			log.Println(doErr)
+			err = doErr
+			continue
+		}
+
+		body, err = func() ([]byte, error) {
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				return nil, nil
 			}
-			return
+			return io.ReadAll(io.LimitReader(resp.Body, MaxResponseSize))
+		}()
+		if err != nil {
+			continue
+		}
+		if body != nil {
+			return body, nil
 		}
 	}
 

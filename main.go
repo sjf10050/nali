@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/zu1k/nali/internal/constant"
 
 	"github.com/zu1k/nali/cmd"
@@ -10,6 +12,8 @@ import (
 )
 
 func main() {
-	config.ReadConfig(constant.ConfigDirPath)
+	if err := config.ReadConfig(constant.ConfigDirPath); err != nil {
+		log.Fatalln("Failed to read config:", err)
+	}
 	cmd.Execute()
 }

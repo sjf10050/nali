@@ -3,7 +3,6 @@ package ip2region
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -33,17 +32,8 @@ func NewIp2Region(filePath string) (*Ip2Region, error) {
 		}
 	}
 
-	f, err := os.OpenFile(filePath, os.O_RDONLY, 0400)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	data, err := io.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
-	searcher, err := xdb.NewWithBuffer(data)
+	// Use memory-mapped file access instead of loading entire file into memory
+	searcher, err := xdb.NewWithFileOnly(xdb.IPv4, filePath)
 	if err != nil {
 		fmt.Printf("无法解析 ip2region xdb 数据库: %s\n", err)
 		return nil, err
@@ -55,7 +45,7 @@ func NewIp2Region(filePath string) (*Ip2Region, error) {
 
 func (db Ip2Region) Find(query string, params ...string) (result fmt.Stringer, err error) {
 	if db.seacher != nil {
-		res, err := db.seacher.SearchByStr(query)
+		res, err := db.seacher.Search(query)
 		if err != nil {
 			return nil, err
 		} else {
