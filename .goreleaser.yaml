@@ -1,0 +1,103 @@
+version: 2
+
+builds:
+  - id: darwin
+    binary: nali
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/zu1k/nali/internal/constant.Version={{ .Tag }}
+    tags:
+      - osusergo
+      - netgo
+    goos: [darwin]
+    goarch: [amd64, arm64]
+
+  - id: linux
+    binary: nali
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/zu1k/nali/internal/constant.Version={{ .Tag }}
+    tags:
+      - osusergo
+      - netgo
+    goos: [linux]
+    goarch: [386, amd64, arm64, mips64, mips64le]
+
+  - id: linux-arm
+    binary: nali
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/zu1k/nali/internal/constant.Version={{ .Tag }}
+    tags:
+      - osusergo
+      - netgo
+    goos: [linux]
+    goarch: [arm]
+    goarm: ["5", "6", "7"]
+
+  - id: linux-mips
+    binary: nali
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/zu1k/nali/internal/constant.Version={{ .Tag }}
+    tags:
+      - osusergo
+      - netgo
+    goos: [linux]
+    goarch: [mips, mipsle]
+    gomips: [hardfloat, softfloat]
+
+  - id: freebsd
+    binary: nali
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/zu1k/nali/internal/constant.Version={{ .Tag }}
+    tags:
+      - osusergo
+      - netgo
+    goos: [freebsd]
+    goarch: [386, amd64]
+
+  - id: windows
+    binary: nali
+    main: .
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/zu1k/nali/internal/constant.Version={{ .Tag }}
+    tags:
+      - osusergo
+      - netgo
+    goos: [windows]
+    goarch: [386, amd64, arm64]
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: "checksums.txt"
