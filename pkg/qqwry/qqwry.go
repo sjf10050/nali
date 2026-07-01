@@ -1,6 +1,7 @@
 package qqwry
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -32,7 +33,7 @@ func NewQQwry(filePath string) (*QQwry, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Println("文件不存在，尝试从网络获取最新纯真 IP 库")
-		fileData, err = download.Download(filePath, DownloadUrls...)
+		fileData, err = download.Download(context.Background(), filePath, DownloadUrls...)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +71,7 @@ func NewQQwry(filePath string) (*QQwry, error) {
 	}, nil
 }
 
-func (db QQwry) Find(query string, params ...string) (result fmt.Stringer, err error) {
+func (db QQwry) Find(query string) (result fmt.Stringer, err error) {
 	ip := net.ParseIP(query)
 	if ip == nil {
 		return nil, errors.New("query should be IPv4")
@@ -88,6 +89,9 @@ func (db QQwry) Find(query string, params ...string) (result fmt.Stringer, err e
 
 	reader := wry.NewReader(db.Data)
 	reader.Parse(offset + 4)
+	if err := reader.Err(); err != nil {
+		return nil, err
+	}
 	return reader.Result.DecodeGBK(), nil
 }
 

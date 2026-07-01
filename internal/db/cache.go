@@ -7,6 +7,9 @@ import (
 )
 
 var (
+	// cacheMu guards dbNameCache and dbTypeCache (plain maps). queryCache is a
+	// sync.Map and needs no external locking.
+	cacheMu     sync.RWMutex
 	dbNameCache = make(map[string]dbif.DB)
 	dbTypeCache = make(map[dbif.QueryType]dbif.DB)
 	queryCache  = sync.Map{}

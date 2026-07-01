@@ -1,6 +1,7 @@
 package cdn
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -45,7 +46,7 @@ func NewCDN(filePath string) (*CDN, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Println("文件不存在，尝试从网络获取最新CDN数据库")
-		fileData, err = download.Download(filePath, DownloadUrls...)
+		fileData, err = download.Download(context.Background(), filePath, DownloadUrls...)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +91,7 @@ func NewCDN(filePath string) (*CDN, error) {
 	return &CDN{Map: cdnMap, ReMap: cdnReMap, ReBucket: reBucket}, nil
 }
 
-func (db CDN) Find(query string, params ...string) (result fmt.Stringer, err error) {
+func (db CDN) Find(query string) (result fmt.Stringer, err error) {
 	baseCname := parseBaseCname(query)
 	for _, domain := range baseCname {
 		if domain != "" {

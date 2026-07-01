@@ -2,11 +2,18 @@ package wry
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
+
+// ErrMalformed is returned (via Reader.Err) when a database file drives the
+// reader out of bounds or contains a broken redirect chain. The offsets a
+// Reader follows come straight from the (untrusted) database file, so every
+// read is bounds-checked and sets a sticky error instead of panicking.
+var ErrMalformed = errors.New("wry: malformed database")
 
 // IPDB common ip database
 type IPDB[T ~uint32 | ~uint64] struct {
@@ -20,9 +27,10 @@ type IPDB[T ~uint32 | ~uint64] struct {
 }
 
 type Reader struct {
-	s []byte
-	i uint32 // current reading index
-	l uint32 // last reading index
+	s   []byte
+	i   uint32 // current reading index
+	l   uint32 // last reading index
+	err error  // sticky: once set, all reads become no-ops
 
 	Result Result
 }
@@ -32,6 +40,15 @@ func NewReader(data []byte) Reader {
 		Country: "",
 		Area:    "",
 	}}
+}
+
+// Err reports whether parsing hit malformed/out-of-range data.
+func (r *Reader) Err() error { return r.err }
+
+func (r *Reader) fail() {
+	if r.err == nil {
+		r.err = ErrMalformed
+	}
 }
 
 func (r *Reader) seekAbs(offset uint32) {
@@ -51,6 +68,10 @@ func (r *Reader) seekBack() {
 
 func (r *Reader) read(length uint32) []byte {
 	rs := make([]byte, length)
+	if r.err != nil || r.i > uint32(len(r.s)) {
+		r.fail()
+		return rs
+	}
 	copy(rs, r.s[r.i:])
 	r.l = r.i
 	r.i += length
@@ -58,6 +79,10 @@ func (r *Reader) read(length uint32) []byte {
 }
 
 func (r *Reader) readMode() (mode byte) {
+	if r.err != nil || r.i >= uint32(len(r.s)) {
+		r.fail()
+		return 0
+	}
 	mode = r.s[r.i]
 	r.l = r.i
 	r.i += 1
@@ -76,11 +101,21 @@ func (r *Reader) readOffset(follow bool) uint32 {
 }
 
 func (r *Reader) readString(seek bool) string {
-	length := bytes.IndexByte(r.s[r.i:], 0)
-	str := string(r.s[r.i : r.i+uint32(length)])
+	if r.err != nil || r.i > uint32(len(r.s)) {
+		r.fail()
+		return ""
+	}
+	idx := bytes.IndexByte(r.s[r.i:], 0)
+	if idx < 0 {
+		// no NUL terminator: string runs off the end of the file
+		r.fail()
+		return ""
+	}
+	length := uint32(idx)
+	str := string(r.s[r.i : r.i+length])
 	if seek {
 		r.l = r.i
-		r.i += uint32(length) + 1
+		r.i += length + 1
 	}
 	return str
 }

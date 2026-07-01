@@ -6,7 +6,6 @@ require (
 	github.com/adrg/xdg v0.5.3
 	github.com/fatih/color v1.19.0
 	github.com/google/go-github/v55 v55.0.0
-	github.com/google/martian v2.1.0+incompatible
 	github.com/ip2location/ip2location-go/v9 v9.8.0
 	github.com/ipipdotnet/ipdb-go v1.3.3
 	github.com/lionsoul2014/ip2region/binding/golang v0.0.0-20260630140118-a99989343ebd

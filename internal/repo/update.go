@@ -17,13 +17,12 @@ import (
 )
 
 var (
-	ctx      = context.Background()
 	tAsset   *github.ReleaseAsset
 	shaAsset *github.ReleaseAsset
 )
 
-func UpdateRepo() error {
-	rel, err := getLatestRelease()
+func UpdateRepo(ctx context.Context) error {
+	rel, err := getLatestRelease(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get latest release: %v", err)
 	}
@@ -52,9 +51,14 @@ func UpdateRepo() error {
 		return fmt.Errorf("failed to download asset %v: %v", tAsset.GetID(), err)
 	}
 
-	// Verifying files with sha256
+	// Verifying files with sha256. The .sha256 asset starts with the hex-encoded
+	// digest (64 hex chars == 32 bytes); guard the length before slicing.
+	const hexLen = sha256.Size * 2
+	if len(vData) < hexLen {
+		return fmt.Errorf("invalid sha256 asset: got %d bytes, need at least %d", len(vData), hexLen)
+	}
 	vHash := make([]byte, sha256.Size)
-	if _, err := hex.Decode(vHash, vData[:sha256.BlockSize]); err != nil {
+	if _, err := hex.Decode(vHash, vData[:hexLen]); err != nil {
 		return fmt.Errorf("failed to decode sha256 hash: %v", err)
 	}
 	if !validate(data, vHash) {

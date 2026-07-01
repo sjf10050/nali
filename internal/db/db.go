@@ -21,8 +21,11 @@ func init() {
 }
 
 func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
-	if db, found := dbTypeCache[typ]; found {
-		return db, nil
+	cacheMu.RLock()
+	cached, found := dbTypeCache[typ]
+	cacheMu.RUnlock()
+	if found {
+		return cached, nil
 	}
 
 	lang := viper.GetString("selected.lang")
@@ -106,7 +109,9 @@ func GetDB(typ dbif.QueryType) (db dbif.DB, err error) {
 		return nil, fmt.Errorf("database init failed")
 	}
 
+	cacheMu.Lock()
 	dbTypeCache[typ] = db
+	cacheMu.Unlock()
 	return db, nil
 }
 

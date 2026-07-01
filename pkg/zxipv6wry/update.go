@@ -1,6 +1,7 @@
 package zxipv6wry
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,8 +12,8 @@ import (
 	"github.com/zu1k/nali/pkg/common"
 )
 
-func Download(filePath ...string) (data []byte, err error) {
-	data, err = getData()
+func Download(ctx context.Context, filePath ...string) (data []byte, err error) {
+	data, err = getData(ctx)
 	if err != nil {
 		log.Printf("ZX IPv6数据库下载失败，请手动下载解压后保存到本地: %s \n", filePath)
 		log.Println("下载链接： https://ip.zxinc.org/ip.7z")
@@ -37,8 +38,8 @@ const (
 	zx = "https://ip.zxinc.org/ip.7z"
 )
 
-func getData() (data []byte, err error) {
-	data, err = common.GetHttpClient().Get(zx)
+func getData(ctx context.Context) (data []byte, err error) {
+	data, err = common.GetHttpClient().Get(ctx, zx)
 	if err != nil {
 		return nil, err
 	}

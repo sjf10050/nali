@@ -1,6 +1,7 @@
 package ip2region
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -26,7 +27,7 @@ func NewIp2Region(filePath string) (*Ip2Region, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Println("文件不存在，尝试从网络获取最新 ip2region 库")
-		_, err = download.Download(filePath, DownloadUrls...)
+		_, err = download.Download(context.Background(), filePath, DownloadUrls...)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +44,7 @@ func NewIp2Region(filePath string) (*Ip2Region, error) {
 	}, nil
 }
 
-func (db Ip2Region) Find(query string, params ...string) (result fmt.Stringer, err error) {
+func (db Ip2Region) Find(query string) (result fmt.Stringer, err error) {
 	if db.seacher != nil {
 		res, err := db.seacher.Search(query)
 		if err != nil {

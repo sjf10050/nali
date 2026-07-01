@@ -30,7 +30,7 @@ func NewIP2Location(filePath string) (*IP2Location, error) {
 	}
 }
 
-func (db IP2Location) Find(query string, params ...string) (result fmt.Stringer, err error) {
+func (db IP2Location) Find(query string) (result fmt.Stringer, err error) {
 	ip := net.ParseIP(query)
 	if ip == nil {
 		return nil, errors.New("Query should be valid IP")

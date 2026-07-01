@@ -7,7 +7,22 @@ const (
 	RedirectMode2 = 0x02
 )
 
+// maxRedirectDepth bounds redirect-mode-1 chains so a cyclic/self-referencing
+// redirect in a malformed database can't recurse forever and overflow the stack.
+const maxRedirectDepth = 16
+
 func (r *Reader) Parse(offset uint32) {
+	r.parse(offset, 0)
+}
+
+func (r *Reader) parse(offset uint32, depth int) {
+	if r.err != nil {
+		return
+	}
+	if depth > maxRedirectDepth {
+		r.fail()
+		return
+	}
 	if offset != 0 {
 		r.seekAbs(offset)
 	}
@@ -15,7 +30,7 @@ func (r *Reader) Parse(offset uint32) {
 	switch r.readMode() {
 	case RedirectMode1:
 		r.readOffset(true)
-		r.Parse(0)
+		r.parse(0, depth+1)
 	case RedirectMode2:
 		r.Result.Country = r.parseRedMode2()
 		r.Result.Area = r.readArea()

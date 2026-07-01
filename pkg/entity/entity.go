@@ -29,10 +29,6 @@ type Entity struct {
 	Info     interface{} `json:"info"`
 }
 
-func (e Entity) ParseInfo() error {
-	return nil
-}
-
 func (e Entity) Json() string {
 	jsonResult, err := json.Marshal(e)
 	if err != nil {

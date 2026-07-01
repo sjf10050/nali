@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"errors"
 	"log"
 	"strings"
@@ -10,14 +11,14 @@ import (
 	"github.com/zu1k/nali/pkg/zxipv6wry"
 )
 
-func UpdateDB(dbNames ...string) {
+func UpdateDB(ctx context.Context, dbNames ...string) {
 	if len(dbNames) == 0 {
 		dbNames = DbNameListForUpdate
 	}
 
 	done := make(map[string]struct{})
 	for _, dbName := range dbNames {
-		update, name := getUpdateFuncByName(dbName)
+		update, name := getUpdateFuncByName(ctx, dbName)
 		if _, found := done[name]; !found {
 			done[name] = struct{}{}
 			if err := update(); err != nil {
@@ -39,7 +40,7 @@ var DbCheckFunc = map[Format]func([]byte) bool{
 	FormatZXIPv6Wry: zxipv6wry.CheckFile,
 }
 
-func getUpdateFuncByName(name string) (func() error, string) {
+func getUpdateFuncByName(ctx context.Context, name string) (func() error, string) {
 	name = strings.TrimSpace(name)
 	db, err := getDbByName(name)
 	if err != nil {
@@ -53,7 +54,7 @@ func getUpdateFuncByName(name string) (func() error, string) {
 	if len(db.DownloadUrls) > 0 {
 		return func() error {
 			log.Printf("正在下载最新 %s 数据库...\n", db.Name)
-			data, err := download.Download(db.File, db.DownloadUrls...)
+			data, err := download.Download(ctx, db.File, db.DownloadUrls...)
 			if err != nil {
 				log.Printf("%s 数据库下载失败，请手动下载解压后保存到本地: %s \n", db.Name, db.File)
 				log.Println("下载链接：", db.DownloadUrls)
@@ -79,7 +80,7 @@ func getUpdateFuncByName(name string) (func() error, string) {
 		zxFile := db.File
 		return func() error {
 			log.Println("正在下载最新 ZX IPv6数据库...")
-			_, err := zxipv6wry.Download(zxFile)
+			_, err := zxipv6wry.Download(ctx, zxFile)
 			if err != nil {
 				log.Println("数据库 ZXIPv6Wry 下载失败:", err)
 			}

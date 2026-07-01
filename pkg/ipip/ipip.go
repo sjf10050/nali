@@ -40,7 +40,7 @@ func (r Result) String() string {
 	return fmt.Sprintf("%s %s %s", r.Country, r.Region, r.City)
 }
 
-func (db IPIPFree) Find(query string, params ...string) (result fmt.Stringer, err error) {
+func (db IPIPFree) Find(query string) (result fmt.Stringer, err error) {
 	info, err := db.FindInfo(query, "CN")
 	if err != nil || info == nil {
 		return nil, err

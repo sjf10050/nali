@@ -1,6 +1,7 @@
 package zxipv6wry
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -22,7 +23,7 @@ func NewZXwry(filePath string) (*ZXwry, error) {
 	_, err := os.Stat(filePath)
 	if err != nil && os.IsNotExist(err) {
 		log.Println("文件不存在，尝试从网络获取最新ZX IPv6数据库")
-		fileData, err = Download(filePath)
+		fileData, err = Download(context.Background(), filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +65,7 @@ func NewZXwry(filePath string) (*ZXwry, error) {
 	}, nil
 }
 
-func (db *ZXwry) Find(query string, _ ...string) (result fmt.Stringer, err error) {
+func (db *ZXwry) Find(query string) (result fmt.Stringer, err error) {
 	ip := net.ParseIP(query)
 	if ip == nil {
 		return nil, errors.New("query should be IPv6")
@@ -79,6 +80,9 @@ func (db *ZXwry) Find(query string, _ ...string) (result fmt.Stringer, err error
 	offset := db.SearchIndexV6(ipu64)
 	reader := wry.NewReader(db.Data)
 	reader.Parse(offset)
+	if err := reader.Err(); err != nil {
+		return nil, err
+	}
 	return reader.Result, nil
 }
 

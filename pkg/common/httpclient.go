@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -36,9 +37,9 @@ func GetHttpClient() *HttpClient {
 	return httpClient
 }
 
-func (c *HttpClient) Get(urls ...string) (body []byte, err error) {
+func (c *HttpClient) Get(ctx context.Context, urls ...string) (body []byte, err error) {
 	for _, url := range urls {
-		req, reqErr := http.NewRequest(http.MethodGet, url, nil)
+		req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if reqErr != nil {
 			log.Println(reqErr)
 			err = reqErr

@@ -1,6 +1,7 @@
 package download
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 	"github.com/zu1k/nali/pkg/common"
 )
 
-func Download(filePath string, urls ...string) (data []byte, err error) {
+func Download(ctx context.Context, filePath string, urls ...string) (data []byte, err error) {
 	if len(urls) == 0 {
 		return nil, fmt.Errorf("未指定下载 url")
 	}
@@ -20,7 +21,7 @@ func Download(filePath string, urls ...string) (data []byte, err error) {
 	// Try each URL until one succeeds
 	var lastErr error
 	for _, url := range urls {
-		req, err := http.NewRequest(http.MethodGet, url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
 			lastErr = err
 			continue
@@ -46,10 +47,15 @@ func Download(filePath string, urls ...string) (data []byte, err error) {
 			continue
 		}
 
-		_, err = io.Copy(f, resp.Body)
+		// Cap the download size so a broken/hostile server can't fill the disk.
+		const limit = int64(common.MaxResponseSize)
+		n, err := io.Copy(f, io.LimitReader(resp.Body, limit+1))
 		resp.Body.Close()
 		f.Close()
 
+		if err == nil && n > limit {
+			err = fmt.Errorf("download exceeds max size %d bytes", limit)
+		}
 		if err != nil {
 			os.Remove(tmpPath)
 			lastErr = err

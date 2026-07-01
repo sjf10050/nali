@@ -27,8 +27,11 @@ type DB struct {
 }
 
 func (d *DB) get() (db dbif.DB, err error) {
-	if db, found := dbNameCache[d.Name]; found {
-		return db, nil
+	cacheMu.RLock()
+	cached, found := dbNameCache[d.Name]
+	cacheMu.RUnlock()
+	if found {
+		return cached, nil
 	}
 
 	filePath := d.File
@@ -56,19 +59,21 @@ func (d *DB) get() (db dbif.DB, err error) {
 		return nil, fmt.Errorf("database init failed: %w", err)
 	}
 
+	cacheMu.Lock()
 	dbNameCache[d.Name] = db
+	cacheMu.Unlock()
 	return
 }
 
 type Format string
 
 const (
-	FormatMMDB       Format = "mmdb"
-	FormatQQWry             = "qqwry"
-	FormatZXIPv6Wry         = "zxipv6wry"
-	FormatIPIP              = "ipip"
-	FormatIP2Region         = "ip2region"
-	FormatIP2Location       = "ip2location"
+	FormatMMDB        Format = "mmdb"
+	FormatQQWry              = "qqwry"
+	FormatZXIPv6Wry          = "zxipv6wry"
+	FormatIPIP               = "ipip"
+	FormatIP2Region          = "ip2region"
+	FormatIP2Location        = "ip2location"
 
 	FormatCDNYml = "cdn-yml"
 )

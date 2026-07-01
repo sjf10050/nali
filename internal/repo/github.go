@@ -19,7 +19,7 @@ var (
 	httpClient = common.GetHttpClient().Client
 )
 
-func getLatestRelease() (*github.RepositoryRelease, error) {
+func getLatestRelease(ctx context.Context) (*github.RepositoryRelease, error) {
 	client = github.NewClient(httpClient)
 	rel, resp, err := client.Repositories.GetLatestRelease(ctx, constant.Owner, constant.Repo)
 	if err != nil {

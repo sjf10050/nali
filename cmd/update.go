@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"context"
 	"log"
+	"os"
+	"os/signal"
 	"strings"
 
 	"github.com/zu1k/nali/internal/db"
@@ -17,11 +20,14 @@ var updateCmd = &cobra.Command{
 	Long:    `update qqwry, zxipv6wry, ip2region ip database and cdn. Use commas to separate. update nali to latest version if -v`,
 	Example: "nali update --db qqwry,cdn -v",
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+		defer stop()
+
 		DBs, _ := cmd.Flags().GetString("db")
 
 		version, _ := cmd.Flags().GetBool("v")
 		if version {
-			if err := repo.UpdateRepo(); err != nil {
+			if err := repo.UpdateRepo(ctx); err != nil {
 				log.Printf("update nali to latest version failed: %v \n", err)
 			}
 		}
@@ -30,7 +36,7 @@ var updateCmd = &cobra.Command{
 		if DBs != "" {
 			DBNameArray = strings.Split(DBs, ",")
 		}
-		db.UpdateDB(DBNameArray...)
+		db.UpdateDB(ctx, DBNameArray...)
 	},
 }
 
