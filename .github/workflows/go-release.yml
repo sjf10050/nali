@@ -72,7 +72,7 @@ jobs:
           retention-days: 30
 
       - name: Upload to S3
-        if: secrets.S3_BUCKET != ''
+        if: ${{ secrets.S3_BUCKET != '' }}
         run: sh .github/scripts/upload_s3.sh
         env:
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
