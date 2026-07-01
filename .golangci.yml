@@ -2,16 +2,37 @@ version: "2"
 
 linters:
   enable:
+    - bodyclose
     - errcheck
+    - exhaustive
     - govet
     - ineffassign
+    - misspell
+    - nilerr
+    - revive
+    - gosec
+    - sqlclosecheck
     - staticcheck
     - unused
-    - misspell
-    - gosec
-    - nilerr
+
+linters-settings:
+  revive:
+    rules:
+      - name: exported
+        disabled: false
+      - name: blank-imports
+      - name: context-as-argument
+      - name: unused-parameter
+  exhaustive:
+    default-signifies-exhaustive: false
 
 formatters:
   enable:
     - gofmt
     - goimports
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
